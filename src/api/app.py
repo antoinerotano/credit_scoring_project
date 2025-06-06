@@ -10,6 +10,13 @@ ROOT       = Path(__file__).resolve().parents[2]
 MODEL_PATH = ROOT / "models_artifacts/model.joblib"
 FEAT_PATH  = ROOT / "data/features.parquet"
 
+FEAT_URL = os.getenv("FEATURES_URL")      # variable Render
+if not FEAT_PATH.exists():
+    FEAT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    print(f"⬇️  Téléchargement des features depuis {FEAT_URL} …")
+    urllib.request.urlretrieve(FEAT_URL, FEAT_PATH)
+    print("✔️  Features téléchargées")
+
 # ────────────────────────────────────────────────────────────────
 #  Chargements au démarrage
 # ────────────────────────────────────────────────────────────────
