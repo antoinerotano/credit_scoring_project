@@ -1,8 +1,12 @@
 Flask==3.0.2
 gunicorn==22.0.0
+
+# data / ML
 pandas==2.2.2
-joblib==1.4.2
-lightgbm==4.3.0
-numpy==2.2.6
+numpy==1.26.4          # <-- ⬇️  revient en 1.x
 scikit-learn==1.4.2
-pyarrow==15.0.2
+lightgbm==4.3.0
+joblib==1.4.2
+pyarrow==15.0.2        # moteur Parquet
+
+# (le reste s’adapte)
