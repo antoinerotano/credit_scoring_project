@@ -1,72 +1,79 @@
-import os, requests, shutil, tempfile
+# src/api/app.py
 from pathlib import Path
 import joblib, pandas as pd
-import pyarrow.dataset as ds          # <- NEW
 from flask import Flask, request, jsonify
 
+# ────────────────────────────────────────────────────────────────
+#  Chemins vers le modèle et les features
+# ────────────────────────────────────────────────────────────────
 ROOT       = Path(__file__).resolve().parents[2]
-MODEL_PATH = ROOT / "models_artifacts" / "model.joblib"
-DATA_DIR   = ROOT / "data"
-PARQUET    = DATA_DIR / "features.parquet"
+MODEL_PATH = ROOT / "models_artifacts/model.joblib"
+FEAT_PATH  = ROOT / "data/features.parquet"
 
-FEAT_URL   = os.getenv("FEATURES_URL")  # lien Dropbox ?dl=1
-
-# ───────────── Téléchargement si besoin ─────────────
-if not PARQUET.exists():
-    print(f"⬇️  Téléchargement des features…")
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    tmp = tempfile.NamedTemporaryFile(delete=False).name
-    with requests.get(FEAT_URL, stream=True) as r:
-        r.raise_for_status()
-        with open(tmp, "wb") as f:
-            shutil.copyfileobj(r.raw, f)
-    shutil.move(tmp, PARQUET)
-    print("✔️  Features téléchargées")
-
-# ───────────── Ouverture paresseuse ─────────────
-print("🔄 Ouverture du dataset Parquet (lazy)…")
-dataset = ds.dataset(PARQUET)          # ne charge rien en RAM ici
-FEATURE_COLS = joblib.load(MODEL_PATH).feature_names_in_
-
+# ────────────────────────────────────────────────────────────────
+#  Chargements au démarrage
+# ────────────────────────────────────────────────────────────────
 print("🔄 Chargement du modèle…")
 model = joblib.load(MODEL_PATH)
 print("✔️  Modèle chargé")
 
-# ───────────── Flask API ─────────────
-app = Flask(__name__)
+print("🔄 Chargement des features…")
+df = pd.read_parquet(FEAT_PATH)
 
-def get_features(sk_id: int) -> pd.DataFrame:
-    """
-    Lit UNE SEULE ligne dans le Parquet, retourne DataFrame (1, n_features)
-    """
-    table = dataset.to_table(
-        filter=ds.field("SK_ID_CURR") == sk_id,
-        columns=["SK_ID_CURR", *FEATURE_COLS]     # on ne lit que ce qu'il faut
-    )
-    if table.num_rows == 0:
-        return None
-    df = table.to_pandas()
-    df = df.set_index("SK_ID_CURR")
-    return df
+# 1) Nettoyage des colonnes indésirables
+df = df.drop(columns=["TARGET", "index"], errors="ignore")
+
+# 2) Met en index SK_ID_CURR, puis conserve uniquement les colonnes attendues
+if "SK_ID_CURR" not in df.columns:
+    raise ValueError("La colonne SK_ID_CURR est manquante dans features.parquet")
+
+df = df.set_index("SK_ID_CURR")
+
+expected_cols = list(model.feature_names_in_)      # colonnes vues au fit
+X_full = df[expected_cols]                         # sélection
+
+print("✔️  Features nettoyées :", X_full.shape)
+
+# ID par défaut pour test rapide
+DEFAULT_SK_ID = int(X_full.index.dropna().astype(int)[0])
+print(f"ℹ️  ID client par défaut = {DEFAULT_SK_ID}")
+
+# ────────────────────────────────────────────────────────────────
+#  Application Flask
+# ────────────────────────────────────────────────────────────────
+app = Flask(__name__)
 
 @app.route("/predict", methods=["GET"])
 def predict():
     """
     GET /predict?sk_id=<id_client>
+    - Si sk_id omis → DEFAULT_SK_ID
+    - Renvoie JSON {sk_id, proba, decision, default_used}
     """
-    try:
-        sk_id = int(request.args.get("sk_id", 0))
-    except (ValueError, TypeError):
-        return jsonify(error="Paramètre sk_id invalide"), 400
+    param = request.args.get("sk_id")
+    if param is None:
+        sk_id = DEFAULT_SK_ID
+        default_used = True
+    else:
+        try:
+            sk_id = int(param)
+            default_used = False
+        except ValueError:
+            return jsonify(error="Paramètre sk_id invalide"), 400
 
-    X = get_features(sk_id)
-    if X is None:
+    if sk_id not in X_full.index:
         return jsonify(error=f"SK_ID_CURR {sk_id} introuvable"), 404
 
-    proba    = float(model.predict_proba(X)[:, 1][0])
+    proba = float(model.predict_proba(X_full.loc[[sk_id]])[:, 1][0])
     decision = int(proba >= 0.206)
 
-    return jsonify(sk_id=sk_id, proba=proba, decision=decision)
+    return jsonify(
+        sk_id=sk_id,
+        proba=proba,
+        decision=decision,
+        default_used=default_used
+    )
 
 if __name__ == "__main__":
+    # Lancement local : python -m src.api.app
     app.run(host="0.0.0.0", port=5000, debug=True)
