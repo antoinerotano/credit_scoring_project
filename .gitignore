@@ -2,4 +2,4 @@ data/
 __pycache__/
 *.pkl
 *.joblib
-data/*.parquet
+*.parquet
