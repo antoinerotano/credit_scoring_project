@@ -1,6 +1,8 @@
 # src/api/app.py
 from pathlib import Path
-import joblib, os, pandas as pd
+import os                    
+import urllib.request        
+import joblib, pandas as pd
 from flask import Flask, request, jsonify
 
 # ────────────────────────────────────────────────────────────────
