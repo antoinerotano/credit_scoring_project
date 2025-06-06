@@ -8,7 +8,7 @@ from flask import Flask, request, jsonify
 # ────────────────────────────────────────────────────────────────
 ROOT       = Path(__file__).resolve().parents[2]
 MODEL_PATH = ROOT / "models_artifacts/model.joblib"
-FEAT_PATH  = ROOT / "data/features.parquet"
+FEAT_PATH  = ROOT / "data/features_sample.parquet"
 
 # ────────────────────────────────────────────────────────────────
 #  Chargements au démarrage
