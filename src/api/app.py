@@ -9,7 +9,7 @@ from flask import Flask, request, jsonify, abort
 # ────────────────────────────────
 ROOT       = Path(__file__).resolve().parents[2]
 MODEL_PATH = ROOT / "models_artifacts" / "model.joblib"
-FEAT_PATH  = ROOT / "data" / "features.parquet"      # ← on charge le set complet
+FEAT_PATH  = ROOT / "data" / "features_sample.parquet"      # ← on charge le set complet
 
 # ────────────────────────────────
 #  Chargements au démarrage
@@ -26,7 +26,7 @@ df = df.drop(columns=["TARGET", "index"], errors="ignore")
 
 # 2) mise en index
 if "SK_ID_CURR" not in df.columns:
-    raise RuntimeError("La colonne 'SK_ID_CURR' est absente de features.parquet")
+    raise RuntimeError("La colonne 'SK_ID_CURR' est absente de features_sample.parquet")
 
 df = df.set_index("SK_ID_CURR")
 
@@ -34,7 +34,7 @@ df = df.set_index("SK_ID_CURR")
 expected_cols = list(model.feature_names_in_)
 missing = set(expected_cols) - set(df.columns)
 if missing:
-    raise RuntimeError(f"Colonnes manquantes dans features.parquet : {missing}")
+    raise RuntimeError(f"Colonnes manquantes dans features_sample.parquet : {missing}")
 
 X_full = df[expected_cols]
 print("✔️  Features nettoyées :", X_full.shape)
