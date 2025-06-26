@@ -14,7 +14,7 @@ from pathlib import Path
 st.set_page_config(page_title="Credit-Scoring Dashboard", layout="wide")
 
 API_URL  = "https://credit-scoring-project-5d5k.onrender.com/predict"
-FEAT_PATH = Path(__file__).parent / "features_sample.parquet"
+FEAT_PATH = ROOT / "data" / "features_sample.parquet" 
 
 @st.cache_data(show_spinner="📦 Chargement des features…")
 def load_features(path: Path) -> pd.DataFrame:
