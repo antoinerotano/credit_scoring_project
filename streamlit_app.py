@@ -70,23 +70,31 @@ except Exception as e:
 # 4️⃣  Scatter-plot interactif
 # ────────────────────────────────────────────────────────────────
 fig = px.scatter(
-    df, x=x_axis, y=y_axis,
-    opacity=0.35, template="simple_white",
+    df,
+    x=x_axis,
+    y=y_axis,
+    opacity=0.25,              # points bleus plus transparents
+    template="simple_white",
     title=f"Distribution des clients ({x_axis} vs {y_axis})"
 )
 
-# Met en évidence l’observation sélectionnée
+# on réduit la taille des marqueurs bleus
+fig.update_traces(marker=dict(size=6, color="#636EFA"), selector=dict(mode="markers"))
+
+# ── Client sélectionné : on l’ajoute APRÈS pour qu’il passe devant
 fig.add_scatter(
     x=[df.loc[client_id, x_axis]],
     y=[df.loc[client_id, y_axis]],
     mode="markers+text",
-    marker=dict(size=12, color="red", line=dict(width=2, color="black")),
+    marker=dict(size=14, color="red", line=dict(width=2, color="black")),
     text=[str(client_id)],
     textposition="top center",
-    name="Client sélectionné"
+    name="Client sélectionné",
+    showlegend=False          # facultatif : pas de légende pour un seul point
 )
 
 st.plotly_chart(fig, use_container_width=True)
+
 
 # ────────────────────────────────────────────────────────────────
 # 5️⃣  Tableau des features (facultatif)
