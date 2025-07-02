@@ -1,0 +1,8 @@
+name: credit_scoring          # ← nom libre, sans espace
+channels:
+  - conda-forge               # toujours en premier pour plus de paquets
+dependencies:
+  - python=3.12.3             # 🔒 version épinglée
+  - pip                       # ajoute pip à l’environnement
+  - pip:
+      - -r requirements.txt   # réutilise ton requirements.txt existant
