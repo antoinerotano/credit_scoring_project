@@ -25,7 +25,7 @@ THRESHOLD = 0.206
 
 # ╭──────────────────────────────────────────────────────────────╮
 # Fonctions utilitaires
-# ╰──────────────────────────────────────────────────────────────╮
+# ╰──────────────────────────────────────────────────────────────╯
 @st.cache_data
 def load_data():
     """Charge et prépare les données des clients."""
@@ -50,7 +50,7 @@ def format_euro(value):
 
 # ╭──────────────────────────────────────────────────────────────╮
 # Chargement des données
-# ╰──────────────────────────────────────────────────────────────╮
+# ╰──────────────────────────────────────────────────────────────╯
 df, num_cols = load_data()
 
 # ╭──────────────────────────────────────────────────────────────╮
@@ -76,34 +76,34 @@ with st.sidebar:
 
 # --- Définition des palettes de couleurs ---
 if wcag_mode:
-    # Palette WCAG (Contraste Élevé avec plus de distinction)
+    # Palette WCAG (Contraste Élevé)
     colors = {
-        "gauge_bar_ok": "#008000",       # Vert forêt profond
-        "gauge_bar_ko": "#800000",       # Rouge bordeaux foncé
-        "gauge_step_ok": "#32CD32",      # Vert lime vif
-        "gauge_step_ko": "#FF4500",      # Orange brûlé (très distinct du rouge)
-        "gauge_threshold": "#000000",    # Noir
-        "scatter_client": "#FFFF00",     # Jaune fluo éclatant
-        "scatter_others": "#333333",     # Gris très foncé
-        "decision_ok_bg": "#008000",     # Vert forêt profond
-        "decision_ko_bg": "#800000",     # Rouge bordeaux foncé
+        "gauge_bar_ok": "#018E42",       # Vert foncé
+        "gauge_bar_ko": "#D91E18",       # Rouge foncé
+        "gauge_step_ok": "#ABE0C2",      # Vert pastel
+        "gauge_step_ko": "#F5B8B5",      # Rouge pastel
+        "gauge_threshold": "#D91E18",    # Rouge foncé
+        "scatter_client": "#FFBF17",     # Jaune vif pour la visibilité
+        "scatter_others": "#707070",     # Gris neutre
+        "decision_ok_bg": "#018E42",     # Vert foncé
+        "decision_ko_bg": "#D91E18",     # Rouge foncé
         "decision_text": "#FFFFFF",      # Texte blanc
         "hist_vline": "#000000"          # Ligne noire
     }
 else:
-    # Palette par défaut (esthétique avec des couleurs plus douces et des accents vifs)
+    # Palette par défaut
     colors = {
-        "gauge_bar_ok": "#2ECC71",       # Vert frais
-        "gauge_bar_ko": "#E74C3C",       # Rouge passion
-        "gauge_step_ok": "#A8E6CF",      # Vert pomme clair
-        "gauge_step_ko": "#FFD3B6",      # Rose saumon clair
-        "gauge_threshold": "#C0392B",    # Rouge plus profond
-        "scatter_client": "#FFC300",     # Jaune d'or vibrant
-        "scatter_others": "#ADD8E6",     # Bleu ciel doux
-        "decision_ok_bg": "#2ECC71",     # Vert frais
-        "decision_ko_bg": "#E74C3C",     # Rouge passion
-        "decision_text": "#FFFFFF",      # Blanc
-        "hist_vline": "#36454F"          # Gris anthracite
+        "gauge_bar_ok": "green",
+        "gauge_bar_ko": "red",
+        "gauge_step_ok": "lightgreen",
+        "gauge_step_ko": "lightcoral",
+        "gauge_threshold": "red",
+        "scatter_client": "red",
+        "scatter_others": "lightblue",
+        "decision_ok_bg": "#10b981",
+        "decision_ko_bg": "#ef4444",
+        "decision_text": "white",
+        "hist_vline": "red"
     }
 
 # --- Injection du CSS dynamique ---
@@ -154,7 +154,7 @@ with col1:
 # Métriques
 with col2:
     st.metric("Score", f"{proba:.1%}")
-    st.metric("Distance / Seuil", f"{abs(proba - THRESHOLD)::.1%}")
+    st.metric("Distance / Seuil", f"{abs(proba - THRESHOLD):.1%}")
 
 # Décision
 with col3:
@@ -184,7 +184,7 @@ with col5:
 
 # ╭──────────────────────────────────────────────────────────────╮
 # Graphiques de comparaison
-# ╰──────────────────────────────────────────────────────────────╮
+# ╰──────────────────────────────────────────────────────────────╯
 st.subheader("📊 Positionnement du Client")
 
 col_scatter, col_hist = st.columns([2, 1])
@@ -220,7 +220,7 @@ with col_hist:
 
 # ╭──────────────────────────────────────────────────────────────╮
 # Détails
-# ╰──────────────────────────────────────────────────────────────╮
+# ╰──────────────────────────────────────────────────────────────╯
 with st.expander("🗂️ Afficher les détails complets du client"):
     st.dataframe(client_data.to_frame("Valeur").astype(str))
 
