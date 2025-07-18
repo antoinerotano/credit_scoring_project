@@ -19,6 +19,7 @@ st.set_page_config(
 # Paramètres
 HERE = Path(__file__).resolve().parent
 FEAT_PATH = HERE / "data" / "features_sample.parquet"
+SHAP_PATH = HERE / "data" / "shap_values_sample.parquet"  # Nouveau fichier SHAP
 API_URL = "https://credit-scoring-project-5d5k.onrender.com/predict"
 THRESHOLD = 0.206
 
@@ -33,6 +34,16 @@ def load_data():
     df["SK_ID_CURR"] = df["SK_ID_CURR"].astype(int)
     num_cols = [c for c in df.columns if df[c].dtype != "object" and c != "SK_ID_CURR"]
     return df.set_index("SK_ID_CURR"), num_cols
+
+@st.cache_data
+def load_shap_data():
+    """Charge les valeurs SHAP précalculées."""
+    try:
+        shap_df = pd.read_parquet(SHAP_PATH)
+        shap_df["SK_ID_CURR"] = shap_df["SK_ID_CURR"].astype(int)
+        return shap_df.set_index("SK_ID_CURR")
+    except Exception:
+        return pd.DataFrame()  # Retourne un DataFrame vide en cas d'erreur
 
 @st.cache_data(ttl=300)
 def get_prediction(client_id):
@@ -52,6 +63,7 @@ def format_euro(value):
 # Chargement des données
 # ╰──────────────────────────────────────────────────────────────╯
 df, num_cols = load_data()
+shap_df = load_shap_data()  # Chargement des données SHAP
 
 # ╭──────────────────────────────────────────────────────────────╮
 # Interface
@@ -88,7 +100,9 @@ if wcag_mode:
         "decision_ok_bg": "#018E42",     # Vert foncé
         "decision_ko_bg": "#D91E18",     # Rouge foncé
         "decision_text": "#FFFFFF",      # Texte blanc
-        "hist_vline": "#000000"          # Ligne noire
+        "hist_vline": "#000000",         # Ligne noire
+        "shap_positive": "#D91E18",      # Rouge pour SHAP positif
+        "shap_negative": "#018E42"       # Vert pour SHAP négatif
     }
 else:
     # Palette par défaut
@@ -103,7 +117,9 @@ else:
         "decision_ok_bg": "#10b981",
         "decision_ko_bg": "#ef4444",
         "decision_text": "white",
-        "hist_vline": "red"
+        "hist_vline": "red",
+        "shap_positive": "red",          # Rouge pour SHAP positif
+        "shap_negative": "green"         # Vert pour SHAP négatif
     }
 
 # --- Injection du CSS dynamique ---
@@ -217,6 +233,56 @@ with col_hist:
     fig_hist.add_vline(x=client_data[x_axis], line_dash="dash", line_color=colors['hist_vline'], line_width=3)
     fig_hist.update_layout(height=400)
     st.plotly_chart(fig_hist, use_container_width=True)
+
+# ╭──────────────────────────────────────────────────────────────╮
+# Interprétabilité SHAP
+# ╰──────────────────────────────────────────────────────────────╯
+with st.expander("📊 Interprétabilité du Score (SHAP)"):
+    st.markdown("""
+    **Top 5 des variables** ayant le plus influencé la prédiction pour ce client.
+    - Les valeurs positives (rouges) augmentent la probabilité de défaut.
+    - Les valeurs négatives (vertes) réduisent la probabilité de défaut.
+    """)
+    
+    if shap_df.empty:
+        st.warning("Les données SHAP n'ont pas pu être chargées. L'interprétabilité n'est pas disponible.")
+    elif client_id not in shap_df.index:
+        st.warning("Données SHAP non disponibles pour ce client.")
+    else:
+        # Récupération des valeurs SHAP pour le client
+        client_shap = shap_df.loc[client_id]
+        
+        # Sélection des 5 features les plus importantes (en valeur absolue)
+        top5_features = client_shap.abs().nlargest(5).index
+        top5_shap = client_shap[top5_features]
+        
+        # Création du graphique à barres horizontales
+        fig = go.Figure()
+        
+        # Ajout des barres avec couleurs conditionnelles
+        for feature, value in top5_shap.items():
+            color = colors['shap_positive'] if value > 0 else colors['shap_negative']
+            fig.add_trace(go.Bar(
+                x=[value],
+                y=[feature],
+                orientation='h',
+                marker_color=color,
+                name=feature,
+                hovertemplate=f"Feature: {feature}<br>Valeur SHAP: {value:.4f}<extra></extra>"
+            ))
+        
+        # Configuration du layout
+        fig.update_layout(
+            title="Top 5 des Features Importance (SHAP)",
+            xaxis_title="Valeur SHAP",
+            yaxis_title="Feature",
+            showlegend=False,
+            height=400,
+            yaxis={'categoryorder': 'total ascending', 'autorange': 'reversed'},
+            margin=dict(l=150)  # Marge gauche pour les noms de features longs
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
 
 # ╭──────────────────────────────────────────────────────────────╮
 # Détails
