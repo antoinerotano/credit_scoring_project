@@ -35,7 +35,7 @@ MODEL_PATH  = HERE / "models_artifacts" / "model.joblib"   # ← modèle prod
 GLOBAL_SHAP = DATA_DIR / "shap_global_values.parquet"      # cache global SHAP
 API_URL     = "https://credit-scoring-project-5d5k.onrender.com/predict"
 THRESHOLD   = 0.206                                        # seuil décision
-PALETTE     = px.colors.sequential.Tealrose                # palette WCAG‑friendly
+PALETTE     = px.colors.sequential.Viridis                # palette WCAG‑friendly
 
 # ╭──────────────────────────────────────────────────────────────╮
 # 2️⃣  Chargements (features, modèle, SHAP)
