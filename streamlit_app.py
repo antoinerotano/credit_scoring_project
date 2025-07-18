@@ -161,23 +161,39 @@ st.subheader("📊 Positionnement du Client")
 col_scatter, col_hist = st.columns([2, 1])
 
 with col_scatter:
-    # Scatter plot
+    # Scatter plot - Construction avec go.Figure pour contrôler l'ordre des couches
     others = df.drop(client_id)
-    fig_scatter = px.scatter(
-        others, x=x_axis, y=y_axis, 
-        opacity=0.3, 
-        title=f"{x_axis} vs {y_axis}"
-    )
     
-    # Point du client
-    fig_scatter.add_scatter(
+    fig_scatter = go.Figure()
+    
+    # D'abord les autres clients (en arrière-plan)
+    fig_scatter.add_trace(go.Scatter(
+        x=others[x_axis], 
+        y=others[y_axis],
+        mode="markers",
+        marker=dict(size=5, color="lightblue", opacity=0.6),
+        name="Autres clients",
+        showlegend=True
+    ))
+    
+    # Ensuite le client sélectionné (au premier plan)
+    fig_scatter.add_trace(go.Scatter(
         x=[client_data[x_axis]], 
         y=[client_data[y_axis]],
         mode="markers+text",
-        marker=dict(size=15, color="red"),
+        marker=dict(size=15, color="red", symbol="circle", line=dict(width=2, color="darkred")),
         text=[f"Client {client_id}"],
         textposition="top center",
-        name="Client sélectionné"
+        textfont=dict(size=12, color="red"),
+        name="Client sélectionné",
+        showlegend=True
+    ))
+    
+    fig_scatter.update_layout(
+        title=f"{x_axis} vs {y_axis}",
+        xaxis_title=x_axis,
+        yaxis_title=y_axis,
+        height=400
     )
     
     st.plotly_chart(fig_scatter, use_container_width=True)
